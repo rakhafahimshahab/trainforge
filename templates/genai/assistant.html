@@ -1,0 +1,134 @@
+{% extends "base_app.html" %}
+
+{% block title %}GenAI Training Plan Assistant : TrainForge{% endblock %}
+
+{% block main %}
+<div class="page-top">
+  <div>
+    <h1>GenAI Training Plan Assistant</h1>
+    <p class="muted">Generate a draft plan with AI, review it, edit it, then save.</p>
+  </div>
+  {% if client %}
+    <div class="flex-row" style="gap:14px;align-items:center;">
+      <span class="pill {% if quota.plan == 'pro' %}pill-active{% elif quota.exhausted %}pill-danger{% else %}pill-warn{% endif %}">
+        {% if quota.plan == 'pro' %}Pro : unlimited AI{% else %}{{ quota.plan|title }} : {{ quota.remaining }}/{{ quota.limit }} this month{% endif %}
+      </span>
+      <form method="post"
+            action="{% url 'genai:generate' client.pk %}"
+            hx-post="{% url 'genai:generate' client.pk %}"
+            hx-target="#draft-panel"
+            hx-swap="innerHTML"
+            hx-indicator="#gen-spinner"
+            id="gen-form">
+        {% csrf_token %}
+        <input type="hidden" name="program_length_weeks" id="hidden-weeks" value="4">
+        <input type="hidden" name="session_duration_min" id="hidden-duration" value="45">
+        <input type="hidden" name="extra_instructions" id="hidden-extra" value="">
+        <button type="submit" class="btn btn-primary" onclick="syncOptions()" {% if quota.exhausted %}disabled aria-disabled="true" title="Upgrade to Pro for unlimited AI drafts"{% endif %}>
+          Generate Draft with AI
+        </button>
+        <span id="gen-spinner" class="htmx-indicator" style="margin-left:10px;">
+          <span class="spinner"></span> <span style="margin-left:6px;">Generating...</span>
+        </span>
+      </form>
+    </div>
+  {% endif %}
+</div>
+
+{% if not clients %}
+  <div class="card">
+    <p class="muted">Add a client first, then come back to draft them a plan.</p>
+    <a href="{% url 'clients:create' %}" class="btn btn-primary mt-3">+ Add Client</a>
+  </div>
+{% else %}
+<div class="genai-layout">
+  <aside class="genai-aside">
+    <div class="card">
+      <h3 style="margin-top:0;">Client Summary</h3>
+      <form method="get" action="{% url 'genai:assistant' %}" style="margin-bottom:14px;">
+        <label for="client-picker">Client</label>
+        <select id="client-picker" name="client" onchange="this.form.submit()">
+          {% for c in clients %}
+            <option value="{{ c.pk }}" {% if client and client.pk == c.pk %}selected{% endif %}>{{ c.full_name }}</option>
+          {% endfor %}
+        </select>
+      </form>
+      {% if client %}
+        <p><strong>Name:</strong> {{ client.full_name }}</p>
+        <p><strong>Goal:</strong> {{ client.fitness_goal|default:"-" }}</p>
+        <p><strong>Preferred days:</strong> {{ client.preferred_times|default:"-" }}</p>
+        <p><strong>Notes / limitations:</strong> {{ client.notes|default:"-" }}</p>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <h3 style="margin-top:0;">Generation Options</h3>
+      <label for="opt-weeks">Program Length</label>
+      <select id="opt-weeks">
+        <option value="2">2 Weeks</option>
+        <option value="4" selected>4 Weeks</option>
+        <option value="6">6 Weeks</option>
+        <option value="8">8 Weeks</option>
+        <option value="12">12 Weeks</option>
+      </select>
+
+      <label for="opt-duration">Session Duration</label>
+      <select id="opt-duration">
+        <option value="30">30 minutes</option>
+        <option value="45" selected>45 minutes</option>
+        <option value="60">60 minutes</option>
+        <option value="75">75 minutes</option>
+      </select>
+
+      <label for="opt-extra">Extra Instructions</label>
+      <textarea id="opt-extra" rows="4" placeholder="e.g. Focus on beginner-friendly strength progression"></textarea>
+    </div>
+  </aside>
+
+  <section class="card genai-main">
+    <div class="notice genai-main-notice" role="note">
+      AI output is a draft only and should be reviewed by the trainer before saving.
+      Always check exercises against the client's limitations.
+    </div>
+    <div id="draft-panel" class="genai-panel">
+      {% include "genai/draft_panel.html" %}
+    </div>
+  </section>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function syncOptions() {
+    var weeks = document.getElementById('opt-weeks');
+    var duration = document.getElementById('opt-duration');
+    var extra = document.getElementById('opt-extra');
+    if (weeks)    document.getElementById('hidden-weeks').value    = weeks.value;
+    if (duration) document.getElementById('hidden-duration').value = duration.value;
+    if (extra)    document.getElementById('hidden-extra').value    = extra.value;
+  }
+  document.body.addEventListener('htmx:configRequest', function (evt) {
+    syncOptions();
+    var form = document.getElementById('gen-form');
+    if (form && evt.detail && evt.detail.elt === form) {
+      evt.detail.parameters['program_length_weeks'] = document.getElementById('opt-weeks').value;
+      evt.detail.parameters['session_duration_min'] = document.getElementById('opt-duration').value;
+      evt.detail.parameters['extra_instructions']   = document.getElementById('opt-extra').value;
+    }
+  });
+
+  (function () {
+    var aside = document.querySelector('.genai-aside');
+    var main  = document.querySelector('.genai-main');
+    if (!aside || !main) return;
+    function sync() { main.style.maxHeight = aside.offsetHeight + 'px'; }
+    sync();
+    window.addEventListener('resize', sync);
+    if (window.ResizeObserver) new ResizeObserver(sync).observe(aside);
+    document.body.addEventListener('htmx:afterSwap', function (evt) {
+      if (evt.target && (evt.target.id === 'draft-panel' || evt.target.closest('.genai-main'))) sync();
+    });
+  })();
+</script>
+{% endblock %}

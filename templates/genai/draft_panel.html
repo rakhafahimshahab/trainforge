@@ -1,0 +1,75 @@
+{% if error %}
+  <div class="notice notice-danger" role="alert" style="margin-bottom:14px;">
+    <strong>Generation failed.</strong> {{ error }}
+  </div>
+{% endif %}
+
+{% if not draft %}
+  <div class="genai-panel-head">
+    <h3 style="margin:0;">Generated Plan Draft</h3>
+  </div>
+  <div class="genai-panel-body">
+    <p class="muted">No draft yet. Use the options on the left, then hit <strong>Generate Draft with AI</strong>.</p>
+  </div>
+{% else %}
+  <div class="genai-panel-head">
+    <h3 style="margin:0;">Generated Plan Draft</h3>
+    <div class="flex-row">
+      <form method="post"
+            action="{% url 'genai:generate' draft.client_id %}"
+            hx-post="{% url 'genai:generate' draft.client_id %}"
+            hx-target="#draft-panel"
+            hx-swap="innerHTML"
+            hx-indicator="#gen-spinner"
+            style="display:inline;">
+        {% csrf_token %}
+        <input type="hidden" name="program_length_weeks" value="{{ draft.program_length_weeks }}">
+        <input type="hidden" name="session_duration_min" value="{{ draft.session_duration_min }}">
+        <input type="hidden" name="extra_instructions" value="{{ draft.extra_instructions }}">
+        <button type="submit" class="btn btn-secondary btn-sm">Regenerate</button>
+      </form>
+      <form method="post" action="{% url 'genai:accept' draft.pk %}" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary btn-sm">Accept Draft</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="genai-panel-body">
+    {% if draft.raw_summary %}
+      <p class="muted" style="margin:0 0 14px;">{{ draft.raw_summary }}</p>
+    {% endif %}
+
+    {% for day in draft.days %}
+      <div class="genai-day">
+        <h4 style="margin:0 0 6px;">{{ day.day_label }}</h4>
+        {% if day.focus %}<p class="muted" style="margin:0 0 10px;font-size:.9rem;">{{ day.focus }}</p>{% endif %}
+        <ul style="list-style:none;padding:0;margin:0;">
+          {% for ex in day.exercises %}
+            <li style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+              <strong>{{ ex.name }}</strong> - {{ ex.sets }} × {{ ex.reps }}
+              {% if ex.notes %}<div class="muted" style="font-size:.85rem;">{{ ex.notes }}</div>{% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endfor %}
+
+    <p class="muted" style="font-size:.85rem;margin-top:10px;">
+      Generated {{ draft.created_at|date:"j M Y · H:i" }} · Length {{ draft.program_length_weeks }} wk · Duration {{ draft.session_duration_min }} min.
+    </p>
+  </div>
+
+  <div class="genai-panel-foot">
+    <h4 style="margin:0 0 6px;">Trainer Edit Area</h4>
+    <p class="muted" style="margin:0 0 8px;font-size:.85rem;">
+      Notes are saved automatically and copied into the plan summary when you accept.
+    </p>
+    <textarea rows="3"
+              name="trainer_notes"
+              hx-post="{% url 'genai:update_notes' draft.pk %}"
+              hx-trigger="blur changed delay:500ms"
+              hx-swap="none"
+              placeholder="Add 5-minute treadmill warm-up. Reduce squat depth as tolerated.">{{ draft.trainer_notes }}</textarea>
+  </div>
+{% endif %}
