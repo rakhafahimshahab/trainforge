@@ -1,0 +1,82 @@
+{% extends "base_app.html" %}
+
+{% block title %}Appointments : TrainForge{% endblock %}
+{% block body_class %}page-fit{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css">
+{% endblock %}
+
+{% block main %}
+<div class="page-top">
+  <div>
+    <h1>Appointment Scheduling and Weekly Schedule</h1>
+    <p class="muted">Click an empty slot to schedule, or click an event to edit it.</p>
+  </div>
+  <div class="flex-row">
+    <button type="button" class="btn btn-primary"
+            hx-get="{% url 'appointments:create' %}"
+            hx-target="#modal"
+            hx-swap="innerHTML">+ New Appointment</button>
+  </div>
+</div>
+
+<section class="card calendar-card">
+  <div class="calendar-legend" aria-label="Session type legend">
+    <span><span class="legend-dot legend-dot-training"></span>Training Session</span>
+    <span><span class="legend-dot legend-dot-consult"></span>Consultation</span>
+    <span><span class="legend-dot legend-dot-cancelled"></span>Cancelled</span>
+    <span class="calendar-legend-hint">Status is shown by both colour and text.</span>
+  </div>
+  <div id="calendar" aria-label="Weekly appointment calendar"></div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var el = document.getElementById('calendar');
+    if (!el) return;
+    var createUrl = '{% url "appointments:create" %}';
+    var editUrlBase = '{% url "appointments:calendar" %}';
+    if (!editUrlBase.endsWith('/')) editUrlBase += '/';
+
+    function toLocalIso(d) {
+      var pad = function (n) { return String(n).padStart(2, '0'); };
+      return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+        + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+
+    var cal = new FullCalendar.Calendar(el, {
+      initialView: 'timeGridWeek',
+      slotMinTime: '06:00:00',
+      slotMaxTime: '21:00:00',
+      height: '100%',
+      expandRows: true,
+      nowIndicator: true,
+      slotEventOverlap: false,
+      eventOverlap: true,
+      allDaySlot: false,
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'timeGridWeek,timeGridDay,listWeek'
+      },
+      buttonText: { today: 'Today', week: 'Week', day: 'Day', list: 'List' },
+      events: '{% url "appointments:feed" %}',
+      dateClick: function (info) {
+        var start = info.date;
+        var end = new Date(start.getTime() + 60 * 60 * 1000);
+        var qs = '?start=' + encodeURIComponent(toLocalIso(start)) + '&end=' + encodeURIComponent(toLocalIso(end));
+        htmx.ajax('GET', createUrl + qs, { target: '#modal', swap: 'innerHTML' });
+      },
+      eventClick: function (info) {
+        info.jsEvent.preventDefault();
+        htmx.ajax('GET', editUrlBase + info.event.id + '/edit/', { target: '#modal', swap: 'innerHTML' });
+      }
+    });
+    cal.render();
+  });
+</script>
+{% endblock %}

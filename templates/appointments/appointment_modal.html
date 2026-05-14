@@ -1,0 +1,65 @@
+<div class="modal-backdrop" data-modal-backdrop>
+  <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="appt-modal-title">
+    <div class="modal-header">
+      <div>
+        <span class="modal-eyebrow">Schedule</span>
+        <h2 id="appt-modal-title" class="modal-title">{{ title }}</h2>
+        <p class="modal-subtitle">Block out the time, pick a session type, save.</p>
+      </div>
+      <button type="button" class="modal-close-btn" aria-label="Close" onclick="tfCloseModal()">×</button>
+    </div>
+
+    <form method="post"
+          hx-post="{% if appointment %}{% url 'appointments:edit' appointment.pk %}{% else %}{% url 'appointments:create' %}{% endif %}"
+          hx-target="#modal"
+          hx-swap="innerHTML"
+          novalidate>
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="notice notice-danger" role="alert">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      <label for="id_client">Client</label>
+      <select id="id_client" name="client" required>
+        {% for c in form.fields.client.queryset %}
+          <option value="{{ c.pk }}" {% if form.client.value|stringformat:"s" == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.full_name }}</option>
+        {% endfor %}
+      </select>
+      {% if form.client.errors %}<div class="form-error">{{ form.client.errors|join:" " }}</div>{% endif %}
+
+      <label for="id_session_type">Session type</label>
+      <select id="id_session_type" name="session_type">
+        {% for value, label in form.fields.session_type.choices %}
+          <option value="{{ value }}" {% if form.session_type.value == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+
+      <div class="grid-2">
+        <div>
+          <label for="id_start_at">Start</label>
+          <input id="id_start_at" type="datetime-local" name="start_at" required value="{{ start_value }}">
+        </div>
+        <div>
+          <label for="id_end_at">End</label>
+          <input id="id_end_at" type="datetime-local" name="end_at" required value="{{ end_value }}">
+        </div>
+      </div>
+
+      <label for="id_status">Status</label>
+      <select id="id_status" name="status">
+        {% for value, label in form.fields.status.choices %}
+          <option value="{{ value }}" {% if form.status.value == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+
+      <label for="id_notes">Notes</label>
+      <textarea id="id_notes" name="notes" rows="3" placeholder="Session notes">{{ form.notes.value|default:'' }}</textarea>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="tfCloseModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Appointment</button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,71 @@
+{% extends "base_app.html" %}
+
+{% block title %}{{ title }} - TrainForge{% endblock %}
+
+{% block main %}
+<div class="page-top">
+  <div>
+    <h1>{{ title }}</h1>
+    <p class="muted">Schedule, reschedule, or cancel an appointment.</p>
+  </div>
+  <a href="{% url 'appointments:calendar' %}" class="btn btn-secondary">← Back</a>
+</div>
+
+<form method="post" class="card card-lg" style="max-width:640px;" novalidate>
+  {% csrf_token %}
+
+  {% if form.non_field_errors %}
+    <div class="notice notice-danger" role="alert">{{ form.non_field_errors }}</div>
+  {% endif %}
+
+  <label for="id_client">Client</label>
+  <select id="id_client" name="client" required>
+    {% for client in form.fields.client.queryset %}
+      <option value="{{ client.pk }}" {% if form.client.value|stringformat:"s" == client.pk|stringformat:"s" %}selected{% endif %}>{{ client.full_name }}</option>
+    {% endfor %}
+  </select>
+  {% if form.client.errors %}<div class="form-error">{{ form.client.errors|join:" " }}</div>{% endif %}
+
+  <label for="id_session_type">Session Type</label>
+  <select id="id_session_type" name="session_type">
+    {% for value, label in form.fields.session_type.choices %}
+      <option value="{{ value }}" {% if form.session_type.value == value %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+
+  <div class="grid-2">
+    <div>
+      <label for="id_start_at">Start</label>
+      <input id="id_start_at" type="datetime-local" name="start_at" required value="{{ form.start_at.value|date:'Y-m-d\\TH:i'|default:'' }}">
+    </div>
+    <div>
+      <label for="id_end_at">End</label>
+      <input id="id_end_at" type="datetime-local" name="end_at" required value="{{ form.end_at.value|date:'Y-m-d\\TH:i'|default:'' }}">
+    </div>
+  </div>
+
+  <label for="id_status">Status</label>
+  <select id="id_status" name="status">
+    {% for value, label in form.fields.status.choices %}
+      <option value="{{ value }}" {% if form.status.value == value %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+
+  <label for="id_notes">Notes</label>
+  <textarea id="id_notes" name="notes" rows="3">{{ form.notes.value|default:'' }}</textarea>
+
+  <div class="flex-row" style="margin-top:24px;justify-content:space-between;">
+    <div class="flex-row">
+      <button type="submit" class="btn btn-primary">Save</button>
+      <a href="{% url 'appointments:calendar' %}" class="btn btn-secondary">Cancel</a>
+    </div>
+    {% if appointment %}
+      <form method="post" action="{% url 'appointments:delete' appointment.pk %}"
+            onsubmit="return confirm('Delete this appointment?');">
+        {% csrf_token %}
+        <button class="btn btn-danger" type="submit">Delete</button>
+      </form>
+    {% endif %}
+  </div>
+</form>
+{% endblock %}
