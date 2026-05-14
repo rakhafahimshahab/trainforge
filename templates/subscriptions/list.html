@@ -1,0 +1,150 @@
+{% extends "base_app.html" %}
+
+{% block title %}Admin Subscription Management : TrainForge{% endblock %}
+
+{% block main %}
+<div class="page-top">
+  <div>
+    <h1>Trainer Subscriptions</h1>
+    <p class="muted">Manage each trainer's plan. New subscriptions are created automatically when a trainer signs up.</p>
+  </div>
+</div>
+
+{% if pending_requests %}
+<div class="card mb-4" style="border-color:rgba(245,196,81,.32);">
+  <div class="flex-between" style="margin-bottom:14px;">
+    <div>
+      <h3 style="margin:0;">Pending upgrade requests <span class="pill pill-warn">{{ pending_requests|length }}</span></h3>
+      <p class="muted" style="margin:6px 0 0;font-size:.9rem;">Trainers asking to switch plan. Confirm payment outside the app, then approve or decline.</p>
+    </div>
+  </div>
+  <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Trainer</th>
+          <th>Email</th>
+          <th>Requested plan</th>
+          <th>Submitted</th>
+          <th>Note</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for req in pending_requests %}
+        <tr>
+          <td>{{ req.trainer_account.trainer_name }}</td>
+          <td class="muted">{{ req.trainer_account.owner.email }}</td>
+          <td><span class="pill pill-warn">{{ req.get_requested_plan_display }}</span></td>
+          <td>{{ req.requested_at|date:"j M Y, H:i" }}</td>
+          <td class="muted">{{ req.note|default:"-" }}</td>
+          <td class="flex-row" style="justify-content:flex-end;">
+            <button type="button" class="btn btn-primary btn-sm"
+                    hx-get="{% url 'subscriptions:upgrade_resolve' req.pk %}?action=approve&confirm=1"
+                    hx-target="#modal"
+                    hx-swap="innerHTML">Approve</button>
+            <button type="button" class="btn btn-danger btn-sm"
+                    hx-get="{% url 'subscriptions:upgrade_resolve' req.pk %}?action=decline&confirm=1"
+                    hx-target="#modal"
+                    hx-swap="innerHTML">Decline</button>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <form method="get" action="{% url 'subscriptions:list' %}"
+        style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:12px;margin-bottom:20px;">
+    <label for="q-input" class="visually-hidden">Search trainer</label>
+    <input id="q-input" type="search" name="q" value="{{ search_q }}" placeholder="Search trainer by name or email">
+
+    <label for="plan-filter" class="visually-hidden">Filter by plan</label>
+    <select id="plan-filter" name="plan">
+      <option value="all" {% if plan_filter == 'all' %}selected{% endif %}>All Plans</option>
+      {% for value, label in plan_choices %}
+        <option value="{{ value }}" {% if plan_filter == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="status-filter" class="visually-hidden">Filter by status</label>
+    <select id="status-filter" name="status">
+      <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
+      <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+      <option value="expired" {% if status_filter == 'expired' %}selected{% endif %}>Expired</option>
+      <option value="archived" {% if status_filter == 'archived' %}selected{% endif %}>Archived</option>
+    </select>
+
+    <button class="btn btn-secondary" type="submit">Filter</button>
+  </form>
+
+  <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Trainer</th>
+          <th scope="col">Email</th>
+          <th scope="col">Plan</th>
+          <th scope="col">Status</th>
+          <th scope="col">Start</th>
+          <th scope="col">End</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sub in subscriptions %}
+          <tr>
+            <td>{{ sub.trainer_account.trainer_name }}</td>
+            <td class="muted">{{ sub.trainer_account.owner.email }}</td>
+            <td>{{ sub.get_plan_display }}</td>
+            <td>
+              {% if sub.status == 'active' %}<span class="pill pill-active">Active</span>
+              {% elif sub.status == 'expired' %}<span class="pill pill-warn">Expired</span>
+              {% else %}<span class="pill pill-archived">Archived</span>{% endif %}
+            </td>
+            <td>{{ sub.start_date }}</td>
+            <td>{{ sub.end_date }}</td>
+            <td class="flex-row" style="justify-content:flex-end;">
+              <button type="button" class="btn btn-secondary btn-sm"
+                      hx-get="{% url 'subscriptions:edit' sub.pk %}"
+                      hx-target="#modal"
+                      hx-swap="innerHTML">Edit</button>
+              <button type="button" class="btn btn-secondary btn-sm"
+                      hx-get="{% url 'subscriptions:archive' sub.pk %}?confirm=1"
+                      hx-target="#modal"
+                      hx-swap="innerHTML">{% if sub.archived_at %}Restore{% else %}Archive{% endif %}</button>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7" class="muted">No subscriptions match these filters.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if page_obj.paginator.num_pages > 1 %}
+  <nav class="flex-row" style="margin-top:18px;" aria-label="Pagination">
+    {% if page_obj.has_previous %}
+      <a href="?{% if search_q %}q={{ search_q }}&{% endif %}plan={{ plan_filter }}&status={{ status_filter }}&page={{ page_obj.previous_page_number }}" class="btn btn-secondary btn-sm">Previous</a>
+    {% else %}
+      <span class="btn btn-secondary btn-sm" aria-disabled="true" style="opacity:.5;cursor:not-allowed;">Previous</span>
+    {% endif %}
+    {% for num in page_obj.paginator.page_range %}
+      {% if num == page_obj.number %}
+        <span class="btn btn-primary btn-sm" aria-current="page">{{ num }}</span>
+      {% else %}
+        <a href="?{% if search_q %}q={{ search_q }}&{% endif %}plan={{ plan_filter }}&status={{ status_filter }}&page={{ num }}" class="btn btn-secondary btn-sm">{{ num }}</a>
+      {% endif %}
+    {% endfor %}
+    {% if page_obj.has_next %}
+      <a href="?{% if search_q %}q={{ search_q }}&{% endif %}plan={{ plan_filter }}&status={{ status_filter }}&page={{ page_obj.next_page_number }}" class="btn btn-secondary btn-sm">Next</a>
+    {% else %}
+      <span class="btn btn-secondary btn-sm" aria-disabled="true" style="opacity:.5;cursor:not-allowed;">Next</span>
+    {% endif %}
+  </nav>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,93 @@
+<div class="modal-backdrop" data-modal-backdrop>
+  <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="upgrade-title" style="width:min(880px,100%);">
+    <div class="modal-header">
+      <div>
+        <span class="modal-eyebrow">Subscription</span>
+        <h2 id="upgrade-title" class="modal-title">Pick your plan</h2>
+        <p class="modal-subtitle">You're currently on <strong>{{ current_plan|title }}</strong>. Payments aren't built into the app yet, so plan changes go through admin approval.</p>
+      </div>
+      <button type="button" class="modal-close-btn" aria-label="Close" onclick="tfCloseModal()">x</button>
+    </div>
+
+    {% if pending %}
+      <div class="notice notice-warn" role="status">
+        <strong>Pending review:</strong> you've already requested
+        {{ pending.get_requested_plan_display }} on
+        {{ pending.requested_at|date:"j M Y, H:i" }}. An admin will be in touch.
+      </div>
+    {% endif %}
+
+    <div class="plan-grid plan-grid-3">
+      <article class="plan-tier {% if current_plan == 'free' %}plan-tier-current{% endif %}">
+        <header class="plan-tier-head">
+          <h3 class="plan-tier-name">Free</h3>
+          <p class="plan-tier-price"><span>$0</span> / month</p>
+        </header>
+        <ul class="plan-tier-list">
+          <li>Unlimited clients, plans, appointments</li>
+          <li>Progress tracking with charts</li>
+          <li><strong>3 AI plan drafts per month</strong></li>
+        </ul>
+        {% if current_plan == 'free' %}
+          <button type="button" class="btn btn-secondary w-full" disabled>Current plan</button>
+        {% else %}
+          <form method="post" hx-post="{% url 'subscriptions:upgrade' %}" hx-target="#modal" hx-swap="innerHTML">
+            {% csrf_token %}
+            <input type="hidden" name="plan" value="free">
+            <button type="submit" class="btn btn-secondary w-full" {% if pending %}disabled{% endif %}>Request downgrade</button>
+          </form>
+        {% endif %}
+      </article>
+
+      <article class="plan-tier {% if current_plan == 'standard' %}plan-tier-current{% endif %}">
+        <header class="plan-tier-head">
+          <h3 class="plan-tier-name">Standard</h3>
+          <p class="plan-tier-price"><span>$12</span> / month</p>
+        </header>
+        <ul class="plan-tier-list">
+          <li>Everything in Free</li>
+          <li><strong>15 AI plan drafts per month</strong></li>
+          <li>Email support</li>
+        </ul>
+        {% if current_plan == 'standard' %}
+          <button type="button" class="btn btn-secondary w-full" disabled>Current plan</button>
+        {% else %}
+          <form method="post" hx-post="{% url 'subscriptions:upgrade' %}" hx-target="#modal" hx-swap="innerHTML">
+            {% csrf_token %}
+            <input type="hidden" name="plan" value="standard">
+            <button type="submit" class="btn btn-secondary w-full" {% if pending %}disabled{% endif %}>
+              {% if pending %}Pending review{% else %}Request Standard{% endif %}
+            </button>
+          </form>
+        {% endif %}
+      </article>
+
+      <article class="plan-tier plan-tier-pro {% if current_plan == 'pro' %}plan-tier-current{% endif %}">
+        <header class="plan-tier-head">
+          <span class="plan-tier-flag">Recommended</span>
+          <h3 class="plan-tier-name">Pro</h3>
+          <p class="plan-tier-price"><span>$29</span> / month</p>
+        </header>
+        <ul class="plan-tier-list">
+          <li>Everything in Standard</li>
+          <li><strong>Unlimited AI plan drafts</strong></li>
+          <li>Priority support</li>
+          <li>Early access to new features</li>
+        </ul>
+        {% if current_plan == 'pro' %}
+          <button type="button" class="btn btn-primary w-full" disabled>Current plan</button>
+        {% else %}
+          <form method="post" hx-post="{% url 'subscriptions:upgrade' %}" hx-target="#modal" hx-swap="innerHTML">
+            {% csrf_token %}
+            <input type="hidden" name="plan" value="pro">
+            <label for="upgrade-note" style="margin-top:0;">Anything the admin should know? (optional)</label>
+            <textarea id="upgrade-note" name="note" rows="2" placeholder="e.g. preferred billing method, start date"></textarea>
+            <button type="submit" class="btn btn-primary w-full" style="margin-top:14px;" {% if pending %}disabled{% endif %}>
+              {% if pending %}Pending review{% else %}Request Pro{% endif %}
+            </button>
+          </form>
+        {% endif %}
+      </article>
+    </div>
+  </div>
+</div>

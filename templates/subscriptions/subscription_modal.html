@@ -1,0 +1,54 @@
+<div class="modal-backdrop" data-modal-backdrop>
+  <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="sub-modal-title">
+    <div class="modal-header">
+      <div>
+        <span class="modal-eyebrow">Admin</span>
+        <h2 id="sub-modal-title" class="modal-title">{{ title }}</h2>
+        <p class="modal-subtitle">Update the plan, dates, or archived status. Archive instead of delete keeps history.</p>
+      </div>
+      <button type="button" class="modal-close-btn" aria-label="Close" onclick="tfCloseModal()">x</button>
+    </div>
+
+    <form method="post"
+          hx-post="{% url 'subscriptions:edit' subscription.pk %}"
+          hx-target="#modal"
+          hx-swap="innerHTML"
+          novalidate>
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="notice notice-danger" role="alert">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      <label for="id_trainer_account">Trainer</label>
+      <select id="id_trainer_account" name="trainer_account" required>
+        {% for ta in form.fields.trainer_account.queryset %}
+          <option value="{{ ta.pk }}" {% if form.trainer_account.value|stringformat:"s" == ta.pk|stringformat:"s" %}selected{% endif %}>{{ ta.trainer_name }} ({{ ta.owner.email }})</option>
+        {% endfor %}
+      </select>
+
+      <label for="id_plan">Plan</label>
+      <select id="id_plan" name="plan">
+        {% for value, label in form.fields.plan.choices %}
+          <option value="{{ value }}" {% if form.plan.value == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+
+      <div class="grid-2">
+        <div>
+          <label for="id_start_date">Start date</label>
+          <input id="id_start_date" type="date" name="start_date" required value="{{ form.start_date.value|date:'Y-m-d'|default:'' }}">
+        </div>
+        <div>
+          <label for="id_end_date">End date</label>
+          <input id="id_end_date" type="date" name="end_date" required value="{{ form.end_date.value|date:'Y-m-d'|default:'' }}">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="tfCloseModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save changes</button>
+      </div>
+    </form>
+  </div>
+</div>
