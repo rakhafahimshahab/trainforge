@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load socialaccount %}
+
+{% block title %}Log in - TrainForge{% endblock %}
+
+{% block body %}
+<div class="container-sm" style="padding:60px 0;">
+  <div style="display:grid;place-items:center;">
+    <div class="card card-lg" style="width:min(440px,100%);">
+      <a href="{% url 'core:landing' %}" style="color:var(--accent);font-weight:700;font-size:1.5rem;text-decoration:none;">TrainForge</a>
+      <h1 style="margin:18px 0 8px;font-size:2rem;">Welcome back</h1>
+      <p class="muted">Sign in to your trainer workspace</p>
+
+      {% if form.errors or form.non_field_errors %}
+        <div class="notice notice-danger" role="alert" style="margin-top:18px;">
+          {% if form.non_field_errors %}{{ form.non_field_errors|join:" " }}{% else %}Please check your email and password.{% endif %}
+        </div>
+      {% endif %}
+
+      <form method="post" action="{% url 'account_login' %}" novalidate>
+        {% csrf_token %}
+        <label for="id_login">Email</label>
+        <input id="id_login" type="email" name="login" autocomplete="email" required placeholder="trainer@email.com" value="{{ form.login.value|default:'' }}">
+
+        <label for="id_password">Password</label>
+        <input id="id_password" type="password" name="password" autocomplete="current-password" required placeholder="••••••••">
+
+        {% if redirect_field_value %}
+          <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+        {% endif %}
+
+        <div style="display:grid;gap:12px;margin-top:24px;">
+          <button type="submit" class="btn btn-primary">Log In</button>
+          <a href="{% provider_login_url 'google' %}" class="btn btn-secondary">Continue with Google</a>
+        </div>
+
+        <p class="muted text-center" style="margin-top:24px;">
+          New here? <a href="{% url 'account_signup' %}" style="color:var(--accent);text-decoration:none;">Create an account</a>
+        </p>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

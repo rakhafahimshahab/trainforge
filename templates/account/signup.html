@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load socialaccount %}
+
+{% block title %}Create account - TrainForge{% endblock %}
+
+{% block body %}
+<div class="container-sm" style="padding:60px 0;">
+  <div style="display:grid;place-items:center;">
+    <div class="card card-lg" style="width:min(440px,100%);">
+      <a href="{% url 'core:landing' %}" style="color:var(--accent);font-weight:700;font-size:1.5rem;text-decoration:none;">TrainForge</a>
+      <h1 style="margin:18px 0 8px;font-size:2rem;">Create your workspace</h1>
+      <p class="muted">Sign up to start coaching your clients</p>
+
+      {% if form.errors %}
+        <div class="notice notice-danger" role="alert" style="margin-top:18px;">
+          {% for field, errors in form.errors.items %}
+            {% for error in errors %}<div>{{ error }}</div>{% endfor %}
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <form method="post" action="{% url 'account_signup' %}" novalidate>
+        {% csrf_token %}
+        <label for="id_email">Email</label>
+        <input id="id_email" type="email" name="email" autocomplete="email" required placeholder="trainer@email.com" value="{{ form.email.value|default:'' }}">
+
+        <label for="id_password1">Password</label>
+        <input id="id_password1" type="password" name="password1" autocomplete="new-password" required placeholder="At least 8 characters">
+
+        <label for="id_password2">Confirm password</label>
+        <input id="id_password2" type="password" name="password2" autocomplete="new-password" required placeholder="Re-enter password">
+
+        {% if redirect_field_value %}
+          <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+        {% endif %}
+
+        <div style="display:grid;gap:12px;margin-top:24px;">
+          <button type="submit" class="btn btn-primary">Create Account</button>
+          <a href="{% provider_login_url 'google' %}" class="btn btn-secondary">Sign up with Google</a>
+        </div>
+
+        <p class="muted text-center" style="margin-top:24px;">
+          Already have an account? <a href="{% url 'account_login' %}" style="color:var(--accent);text-decoration:none;">Log in</a>
+        </p>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

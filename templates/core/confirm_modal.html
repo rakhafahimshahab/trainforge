@@ -1,0 +1,22 @@
+<div class="modal-backdrop" data-modal-backdrop>
+  <div class="modal-dialog" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" style="width:min(440px,100%);">
+    <div class="modal-header">
+      <div>
+        <span class="modal-eyebrow">Confirm</span>
+        <h2 id="confirm-title" class="modal-title">{{ title }}</h2>
+        {% if body %}<p class="modal-subtitle">{{ body }}</p>{% endif %}
+      </div>
+      <button type="button" class="modal-close-btn" aria-label="Close" onclick="tfCloseModal()">x</button>
+    </div>
+    <form method="post"
+          hx-post="{{ action_url }}"
+          hx-target="#modal"
+          hx-swap="innerHTML">
+      {% csrf_token %}
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="tfCloseModal()">Cancel</button>
+        <button type="submit" class="btn {{ action_class|default:'btn-danger' }}" autofocus>{{ action_label }}</button>
+      </div>
+    </form>
+  </div>
+</div>

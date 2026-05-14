@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block body %}
+<div class="app-layout">
+  <aside class="sidebar" aria-label="Primary">
+    <a href="{% url 'core:landing' %}" class="sidebar-brand">TrainForge<span class="sidebar-brand-dot">.</span></a>
+    <nav class="sidebar-nav" aria-label="Main navigation">
+      {% for link in nav_links %}
+        <a href="{{ link.url }}"
+           class="side-link {% if active_nav == link.key %}active{% endif %}"
+           {% if active_nav == link.key %}aria-current="page"{% endif %}>
+          {{ link.label }}
+        </a>
+      {% endfor %}
+    </nav>
+
+    {% if nav_role == 'trainer' and nav_current_plan %}
+      <div class="plan-card">
+        <span class="plan-label">Current plan</span>
+        <span class="plan-name plan-{{ nav_current_plan }}">{{ nav_current_plan|title }}</span>
+        {% if nav_pending_upgrade %}
+          <span class="plan-perk">Upgrade to {{ nav_pending_upgrade.get_requested_plan_display }} pending admin review.</span>
+          <button type="button" class="plan-upgrade plan-upgrade-pending"
+                  hx-get="{% url 'subscriptions:upgrade' %}"
+                  hx-target="#modal"
+                  hx-swap="innerHTML">View request</button>
+        {% elif nav_current_plan == 'starter' %}
+          <button type="button" class="plan-upgrade"
+                  hx-get="{% url 'subscriptions:upgrade' %}"
+                  hx-target="#modal"
+                  hx-swap="innerHTML">Upgrade to Pro</button>
+        {% else %}
+          <span class="plan-perk">Unlimited AI drafts</span>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    {% if user.is_authenticated %}
+      <form method="post" action="{% url 'account_logout' %}" class="sidebar-logout">
+        {% csrf_token %}
+        <button type="submit" class="side-link side-link-logout">Log out</button>
+      </form>
+    {% endif %}
+  </aside>
+  <main class="main" id="main">
+    {% block main %}{% endblock %}
+  </main>
+</div>
+{% endblock %}

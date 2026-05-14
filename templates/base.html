@@ -1,0 +1,129 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}TrainForge{% endblock %}</title>
+  <meta name="description" content="TrainForge - SaaS workspace for personal trainers. Manage clients, plans, appointments, progress, and AI-assisted plan drafts.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js@10.2.0/public/assets/styles/choices.min.css">
+  <link rel="stylesheet" href="{% static 'css/trainforge.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+  {% block body %}{% endblock %}
+
+  {% if messages %}
+  <div class="toast-stack" role="status" aria-live="polite" aria-atomic="false">
+    {% for message in messages %}
+      <div class="toast toast-{{ message.tags|default:'info' }}" data-toast>
+        <span class="toast-dot" aria-hidden="true"></span>
+        <span class="toast-body">{{ message }}</span>
+        <button type="button" class="toast-close" aria-label="Dismiss notification">×</button>
+      </div>
+    {% endfor %}
+  </div>
+  <script>
+    (function () {
+      var toasts = document.querySelectorAll('[data-toast]');
+      toasts.forEach(function (t, i) {
+        t.style.animationDelay = (i * 0.06) + 's';
+        var close = t.querySelector('.toast-close');
+        var dismiss = function () { t.classList.add('toast--leaving'); setTimeout(function(){ t.remove(); }, 280); };
+        if (close) close.addEventListener('click', dismiss);
+        setTimeout(dismiss, 5400 + i * 60);
+      });
+    })();
+  </script>
+  {% endif %}
+
+  <div id="modal" data-modal-root></div>
+
+  <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/choices.js@10.2.0/public/assets/scripts/choices.min.js"></script>
+  <script>
+
+    (function () {
+      function wrapDate(el) {
+        if (!window.flatpickr) return;
+        if (el.classList.contains('flatpickr-input') || el.classList.contains('tf-init')) return;
+        var cfg = { allowInput: true, time_24hr: true, disableMobile: true };
+        if (el.type === 'date') {
+          cfg.dateFormat = 'Y-m-d';
+        } else if (el.type === 'time') {
+          cfg.enableTime = true; cfg.noCalendar = true; cfg.dateFormat = 'H:i';
+        } else {
+          cfg.enableTime = true; cfg.dateFormat = 'Y-m-d\\TH:i';
+          cfg.position = 'above';
+        }
+        try { window.flatpickr(el, cfg); el.classList.add('tf-init'); }
+        catch (e) { console.warn('flatpickr init failed', el, e); }
+      }
+      function wrapSelect(el) {
+        if (!window.Choices) return;
+        if (el.classList.contains('tf-init') || el.closest('.choices')) return;
+        try {
+          new window.Choices(el, {
+            shouldSort: false,
+            searchEnabled: el.options.length > 8,
+            itemSelectText: '',
+            allowHTML: false,
+            position: 'auto',
+          });
+          el.classList.add('tf-init');
+        } catch (e) { console.warn('Choices init failed', el, e); }
+      }
+      function init(scope) {
+        if (!scope || !scope.querySelectorAll) return;
+        scope.querySelectorAll('input[type="date"]:not([data-tf-skip]),input[type="datetime-local"]:not([data-tf-skip]),input[type="time"]:not([data-tf-skip])').forEach(wrapDate);
+        scope.querySelectorAll('select:not([data-tf-skip])').forEach(wrapSelect);
+      }
+      document.addEventListener('DOMContentLoaded', function () { init(document); });
+      ['htmx:load', 'htmx:afterSwap'].forEach(function (ev) {
+        document.body.addEventListener(ev, function (e) {
+          var t = e.target;
+          if (!t && e.detail) t = e.detail.target || e.detail.elt;
+          if (!t) t = document;
+          var modal = document.getElementById('modal');
+          setTimeout(function () {
+            init(t);
+            if (modal && t !== modal && modal.contains(t)) init(modal);
+            else if (modal && modal.firstElementChild) init(modal);
+          }, 0);
+        });
+      });
+    })();
+  </script>
+  <script>
+    (function () {
+      var modal = document.getElementById('modal');
+      function closeModal() { modal.innerHTML = ''; document.body.classList.remove('modal-open'); }
+      window.tfCloseModal = closeModal;
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && modal.firstElementChild) closeModal();
+      });
+      modal.addEventListener('click', function (e) {
+        if (e.target && e.target.matches('[data-modal-backdrop]')) closeModal();
+      });
+      document.body.addEventListener('htmx:afterSwap', function (e) {
+        if (e.detail && e.detail.target && e.detail.target.id === 'modal') {
+          if (modal.firstElementChild) {
+            document.body.classList.add('modal-open');
+            var f = modal.querySelector('input,select,textarea,button');
+            if (f) setTimeout(function(){ f.focus(); }, 30);
+          } else {
+            document.body.classList.remove('modal-open');
+          }
+        }
+      });
+      document.body.addEventListener('tf:closeModal', closeModal);
+    })();
+  </script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>
