@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "build_files.sh",
+      "use": "@vercel/static-build",
+      "config": { "distDir": "staticfiles" }
+    },
+    {
+      "src": "trainforge/wsgi.py",
+      "use": "@vercel/python",
+      "config": { "maxLambdaSize": "50mb", "runtime": "python3.12" }
+    }
+  ],
+  "routes": [
+    { "src": "/static/(.*)", "dest": "/static/$1" },
+    { "src": "/(.*)", "dest": "trainforge/wsgi.py" }
+  ]
+}
