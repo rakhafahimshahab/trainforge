@@ -1,0 +1,133 @@
+{% extends "base_app.html" %}
+
+{% block title %}Progress for {{ client.full_name }} : TrainForge{% endblock %}
+
+{% block main %}
+<div class="page-top">
+  <div>
+    <h1>Progress Tracking</h1>
+    <p class="muted">Review performance, exercise trends, and detailed training logs.</p>
+  </div>
+  <div class="flex-row">
+    <a href="{% url 'progress:overview' %}" class="btn btn-secondary">Back to clients</a>
+    <button type="button" class="btn btn-primary"
+            hx-get="{% url 'progress:log_create' client.pk %}"
+            hx-target="#modal"
+            hx-swap="innerHTML">+ Add Progress Entry</button>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:22px;">
+  <div class="card">
+    <div class="muted" style="font-size:.92rem;">Client</div>
+    <div style="font-size:2rem;font-weight:700;margin-top:8px;">{{ client.full_name }}</div>
+  </div>
+  <div class="card">
+    <div class="muted" style="font-size:.92rem;">Sessions Completed</div>
+    <div style="font-size:2rem;font-weight:700;margin-top:8px;">{{ stats.sessions_completed }}</div>
+  </div>
+  <div class="card">
+    <div class="muted" style="font-size:.92rem;">Adherence Rate</div>
+    <div style="font-size:2rem;font-weight:700;margin-top:8px;">{{ stats.adherence_rate }}%</div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="flex-between">
+    <h3 style="margin:0;">Weight Progress Overview</h3>
+    <span class="muted" style="font-size:.85rem;">Each line is one exercise, weights in kg</span>
+  </div>
+  <div style="height:280px;margin-top:14px;">
+    <canvas id="progress-chart" aria-label="Weight progress chart by exercise" role="img"></canvas>
+  </div>
+  <details style="margin-top:12px;">
+    <summary class="muted" style="cursor:pointer;">Show data as table</summary>
+    <div style="margin-top:10px;overflow-x:auto;">
+      <table>
+        <thead><tr><th>Date</th><th>Exercise</th><th>Sets</th><th>Reps</th><th>Weight (kg)</th></tr></thead>
+        <tbody>
+          {% for log in logs %}
+            {% if log.actual_weight_kg is not None %}
+              <tr>
+                <td>{{ log.log_date }}</td>
+                <td>{{ log.exercise.name }}</td>
+                <td>{{ log.actual_sets }}</td>
+                <td>{{ log.actual_reps }}</td>
+                <td>{{ log.actual_weight_kg }}</td>
+              </tr>
+            {% endif %}
+          {% empty %}
+            <tr><td colspan="5" class="muted">No weighted entries yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </details>
+</div>
+
+<div class="card">
+  <h3 style="margin-top:0;">Progress Log</h3>
+  {% if logs %}
+  <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr><th>Date</th><th>Exercise</th><th>Sets</th><th>Reps</th><th>Weight</th><th>Notes</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td>{{ log.log_date }}</td>
+          <td>{{ log.exercise.name }}</td>
+          <td>{{ log.actual_sets }}</td>
+          <td>{{ log.actual_reps }}</td>
+          <td>{% if log.actual_weight_kg is not None %}{{ log.actual_weight_kg }} kg{% else %}-{% endif %}</td>
+          <td class="muted">{{ log.notes|default:"-" }}</td>
+          <td style="text-align:right;">
+            <button type="button" class="btn btn-danger btn-sm"
+                    hx-get="{% url 'progress:log_delete' log.pk %}?confirm=1"
+                    hx-target="#modal"
+                    hx-swap="innerHTML"
+                    aria-label="Delete entry">x</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="muted">No entries yet. Add one with the button above.</p>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+  (async function () {
+    const ctx = document.getElementById('progress-chart');
+    if (!ctx) return;
+    const resp = await fetch('{% url "progress:chart_data" client.pk %}');
+    const data = await resp.json();
+    if (!data.labels.length) {
+      ctx.parentElement.innerHTML = '<p class="muted">Log a weighted entry to see the chart.</p>';
+      return;
+    }
+    new Chart(ctx, {
+      type: 'line',
+      data: data,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: '#f5f7fb' } },
+          tooltip: { mode: 'index', intersect: false }
+        },
+        scales: {
+          x: { ticks: { color: '#98a3b3' }, grid: { color: 'rgba(255,255,255,.06)' } },
+          y: { ticks: { color: '#98a3b3' }, grid: { color: 'rgba(255,255,255,.06)' }, title: { display: true, text: 'kg', color: '#98a3b3' } }
+        }
+      }
+    });
+  })();
+</script>
+{% endblock %}

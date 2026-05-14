@@ -1,0 +1,43 @@
+{% extends "base_app.html" %}
+
+{% block title %}Progress Tracking - TrainForge{% endblock %}
+
+{% block main %}
+<div class="page-top">
+  <div>
+    <h1>Progress Tracking</h1>
+    <p class="muted">Pick a client to review performance, exercise trends, and training logs.</p>
+  </div>
+</div>
+
+<div class="card">
+  {% if clients %}
+  <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Client</th>
+          <th scope="col">Logged entries</th>
+          <th scope="col">Last entry</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in clients %}
+          <tr>
+            <td>{{ c.full_name }}</td>
+            <td>{{ c.log_count }}</td>
+            <td>{{ c.latest_log|date:"j M Y"|default:"-" }}</td>
+            <td style="text-align:right;">
+              <a href="{% url 'progress:client' c.pk %}" class="btn btn-secondary btn-sm">Open</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="muted">Add clients first to track their progress.</p>
+  {% endif %}
+</div>
+{% endblock %}
