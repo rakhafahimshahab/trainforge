@@ -1,0 +1,65 @@
+<div class="modal-backdrop" data-modal-backdrop>
+  <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="client-modal-title">
+    <div class="modal-header">
+      <div>
+        <span class="modal-eyebrow">Client workspace</span>
+        <h2 id="client-modal-title" class="modal-title">{{ title }}</h2>
+        <p class="modal-subtitle">Capture the details you'll reference while coaching.</p>
+      </div>
+      <button type="button" class="modal-close-btn" aria-label="Close" onclick="tfCloseModal()">×</button>
+    </div>
+
+    <form method="post"
+          hx-post="{% if client %}{% url 'clients:edit' client.pk %}{% else %}{% url 'clients:create' %}{% endif %}"
+          hx-target="#modal"
+          hx-swap="innerHTML"
+          novalidate>
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="notice notice-danger" role="alert">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      <label for="id_full_name">Full name <span aria-hidden="true" style="color:var(--accent);">*</span></label>
+      <input id="id_full_name" type="text" name="full_name" required value="{{ form.full_name.value|default:'' }}">
+      {% if form.full_name.errors %}<div class="form-error">{{ form.full_name.errors|join:" " }}</div>{% endif %}
+
+      <div class="grid-2">
+        <div>
+          <label for="id_email">Email</label>
+          <input id="id_email" type="email" name="email" value="{{ form.email.value|default:'' }}">
+        </div>
+        <div>
+          <label for="id_phone">Phone</label>
+          <input id="id_phone" type="text" name="phone" value="{{ form.phone.value|default:'' }}">
+        </div>
+      </div>
+
+      <label for="id_fitness_goal">Fitness goal</label>
+      <textarea id="id_fitness_goal" name="fitness_goal" rows="2" placeholder="e.g. Build strength, lose body fat">{{ form.fitness_goal.value|default:'' }}</textarea>
+
+      <label for="id_preferred_times">Preferred training times</label>
+      <input id="id_preferred_times" type="text" name="preferred_times" placeholder="e.g. Mon / Wed / Fri mornings" value="{{ form.preferred_times.value|default:'' }}">
+
+      <div class="grid-2">
+        <div>
+          <label for="id_status">Status</label>
+          <select id="id_status" name="status">
+            {% for value, label in form.fields.status.choices %}
+              <option value="{{ value }}" {% if form.status.value == value or form.instance.status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div></div>
+      </div>
+
+      <label for="id_notes">Notes</label>
+      <textarea id="id_notes" name="notes" rows="3" placeholder="Limitations, history, anything worth remembering.">{{ form.notes.value|default:'' }}</textarea>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="tfCloseModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Client</button>
+      </div>
+    </form>
+  </div>
+</div>

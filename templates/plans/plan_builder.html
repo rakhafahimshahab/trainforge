@@ -1,0 +1,84 @@
+<section class="card scroll-card pg-plan" id="plan-builder" aria-label="Training plan builder">
+  <div class="scroll-card-head">
+    <h3 style="margin:0;">Training Plan Builder</h3>
+    <div class="flex-row">
+      <a href="{% url 'plans:view' plan.pk %}" class="btn btn-secondary btn-sm" title="Open the saved plan">View plan</a>
+      <a href="{% url 'genai:assistant_for_client' plan.client_id %}" class="btn btn-secondary btn-sm">AI Draft</a>
+      <button type="button" class="btn btn-danger btn-sm"
+              hx-get="{% url 'plans:delete' plan.pk %}?confirm=1"
+              hx-target="#modal"
+              hx-swap="innerHTML"
+              title="Archive plan">Archive</button>
+    </div>
+  </div>
+
+  <form method="post"
+        action="{% url 'plans:save' plan.client_id %}"
+        hx-post="{% url 'plans:save' plan.client_id %}"
+        hx-target="#plan-builder"
+        hx-swap="outerHTML"
+        style="flex:0 0 auto;">
+    {% csrf_token %}
+
+    <div style="display:grid;grid-template-columns:2fr 1fr auto;gap:12px;align-items:end;">
+      <div>
+        <label for="id_title">Plan Title</label>
+        <input id="id_title" type="text" name="title" value="{{ plan_form.title.value|default:plan.title }}" required>
+      </div>
+      <div>
+        <label for="id_status">Status</label>
+        <select id="id_status" name="status">
+          {% for value, label in plan_form.fields.status.choices %}
+            <option value="{{ value }}" {% if plan.status == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">Save</button>
+    </div>
+
+    <label for="id_goal_summary">Goal summary</label>
+    <textarea id="id_goal_summary" name="goal_summary" rows="2">{{ plan_form.goal_summary.value|default:plan.goal_summary }}</textarea>
+  </form>
+
+  <div class="scroll-card-body" style="margin-top:14px;">
+    {% if plan_exercises %}
+      <div class="plan-row plan-row-header" role="row">
+        <div class="plan-row-grid">
+          <span role="columnheader">Exercise</span>
+          <span role="columnheader">Sets</span>
+          <span role="columnheader">Reps</span>
+          <span role="columnheader">Notes</span>
+          <span role="columnheader" class="visually-hidden">Remove</span>
+        </div>
+      </div>
+      {% for pe in plan_exercises %}
+        <div class="plan-row">
+          <div class="plan-row-grid">
+            <input value="{{ pe.exercise.name }}" readonly aria-label="Exercise name" tabindex="-1">
+            <input type="number" min="0" max="99" name="sets" value="{{ pe.sets }}" aria-label="Sets"
+                   hx-post="{% url 'plans:exercise_update' pe.pk %}"
+                   hx-trigger="change"
+                   hx-swap="none">
+            <input type="number" min="0" max="999" name="reps" value="{{ pe.reps }}" aria-label="Reps"
+                   hx-post="{% url 'plans:exercise_update' pe.pk %}"
+                   hx-trigger="change"
+                   hx-swap="none">
+            <input type="text" name="notes" value="{{ pe.notes }}" aria-label="Notes" placeholder="Cue or tempo"
+                   hx-post="{% url 'plans:exercise_update' pe.pk %}"
+                   hx-trigger="blur changed delay:300ms"
+                   hx-swap="none">
+            <form method="post" action="{% url 'plans:exercise_delete' pe.pk %}"
+                  hx-post="{% url 'plans:exercise_delete' pe.pk %}"
+                  hx-target="#plan-builder"
+                  hx-swap="outerHTML">
+              {% csrf_token %}
+              <button class="btn btn-danger btn-sm" type="submit" aria-label="Remove {{ pe.exercise.name }}">x</button>
+            </form>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p class="muted">No exercises in this plan yet. Add some from the library on the left.</p>
+    {% endif %}
+  </div>
+</section>

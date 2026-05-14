@@ -1,0 +1,68 @@
+{% extends "base_app.html" %}
+
+{% block title %}Exercise Library : TrainForge{% endblock %}
+
+{% block main %}
+<div class="page-top">
+  <div>
+    <h1>Exercise Library</h1>
+    <p class="muted">Reusable exercise templates with default sets and reps.</p>
+  </div>
+  <div class="flex-row">
+    <a href="{% url 'clients:list' %}" class="btn btn-secondary">Back to clients</a>
+    <button type="button" class="btn btn-primary"
+            hx-get="{% url 'exercises:create' %}"
+            hx-target="#modal"
+            hx-swap="innerHTML">+ Add Exercise</button>
+  </div>
+</div>
+
+<div class="card">
+  {% if exercises %}
+  <div style="overflow-x:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Exercise</th>
+          <th scope="col">Category</th>
+          <th scope="col">Default</th>
+          <th scope="col">Description</th>
+          <th scope="col">Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ex in exercises %}
+          <tr>
+            <td>{{ ex.name }}</td>
+            <td>{{ ex.get_category_display }}</td>
+            <td>{{ ex.default_display }}</td>
+            <td class="muted">{{ ex.description|truncatewords:14|default:"-" }}</td>
+            <td>
+              {% if ex.is_active %}
+                <span class="pill pill-active">Active</span>
+              {% else %}
+                <span class="pill pill-inactive">Hidden</span>
+              {% endif %}
+            </td>
+            <td class="flex-row" style="justify-content:flex-end;">
+              <button type="button" class="btn btn-secondary btn-sm"
+                      hx-get="{% url 'exercises:edit' ex.pk %}"
+                      hx-target="#modal"
+                      hx-swap="innerHTML">Edit</button>
+              <button type="button" class="btn btn-danger btn-sm"
+                      hx-get="{% url 'exercises:delete' ex.pk %}?confirm=1"
+                      hx-target="#modal"
+                      hx-swap="innerHTML">Delete</button>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="muted">No exercises yet. <button type="button" class="text-accent" style="background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;"
+        hx-get="{% url 'exercises:create' %}" hx-target="#modal" hx-swap="innerHTML">Create your first one</button>.</p>
+  {% endif %}
+</div>
+{% endblock %}

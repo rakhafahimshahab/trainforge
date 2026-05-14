@@ -1,0 +1,55 @@
+<div class="modal-backdrop" data-modal-backdrop>
+  <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="ex-modal-title">
+    <div class="modal-header">
+      <div>
+        <span class="modal-eyebrow">Library</span>
+        <h2 id="ex-modal-title" class="modal-title">{{ title }}</h2>
+        <p class="modal-subtitle">Reusable exercise. Sets and reps can be tweaked per plan.</p>
+      </div>
+      <button type="button" class="modal-close-btn" aria-label="Close" onclick="tfCloseModal()">x</button>
+    </div>
+
+    <form method="post"
+          hx-post="{% if exercise %}{% url 'exercises:edit' exercise.pk %}{% else %}{% url 'exercises:create' %}{% endif %}"
+          hx-target="#modal"
+          hx-swap="innerHTML"
+          novalidate>
+      {% csrf_token %}
+      {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+
+      {% if form.non_field_errors %}
+        <div class="notice notice-danger" role="alert">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      <label for="id_name">Exercise name <span aria-hidden="true" style="color:var(--accent);">*</span></label>
+      <input id="id_name" type="text" name="name" required value="{{ form.name.value|default:'' }}">
+      {% if form.name.errors %}<div class="form-error">{{ form.name.errors|join:" " }}</div>{% endif %}
+
+      <label for="id_category">Category</label>
+      <select id="id_category" name="category">
+        {% for value, label in form.fields.category.choices %}
+          <option value="{{ value }}" {% if form.category.value == value or form.instance.category == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+
+      <label for="id_description">Description</label>
+      <textarea id="id_description" name="description" rows="2">{{ form.description.value|default:'' }}</textarea>
+
+      <div class="grid-2">
+        <div>
+          <label for="id_default_sets">Default sets</label>
+          <input id="id_default_sets" type="number" min="1" max="20" name="default_sets" value="{{ form.default_sets.value|default:3 }}">
+        </div>
+        <div>
+          <label for="id_default_reps">Default reps</label>
+          <input id="id_default_reps" type="number" min="1" max="50" name="default_reps" value="{{ form.default_reps.value|default:10 }}">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="tfCloseModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Exercise</button>
+      </div>
+    </form>
+  </div>
+</div>

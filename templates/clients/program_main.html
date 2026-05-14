@@ -1,0 +1,139 @@
+{% if selected_client %}
+
+<section class="card scroll-card pg-selected" aria-label="Selected client">
+  <div class="scroll-card-head">
+    <h3 style="margin:0;">Selected Client</h3>
+    <button type="button" class="btn btn-secondary btn-sm"
+            hx-get="{% url 'clients:edit' selected_client.pk %}"
+            hx-target="#modal"
+            hx-swap="innerHTML">Edit</button>
+  </div>
+  <div class="scroll-card-body">
+    <p><strong>Name:</strong> {{ selected_client.full_name }}</p>
+    {% if selected_client.email %}<p><strong>Email:</strong> {{ selected_client.email }}</p>{% endif %}
+    {% if selected_client.phone %}<p><strong>Phone:</strong> {{ selected_client.phone }}</p>{% endif %}
+    {% if selected_client.fitness_goal %}<p><strong>Goal:</strong> {{ selected_client.fitness_goal }}</p>{% endif %}
+    {% if selected_client.preferred_times %}<p><strong>Preferred times:</strong> {{ selected_client.preferred_times }}</p>{% endif %}
+    <p><strong>Status:</strong>
+      {% if selected_client.status == 'active' %}
+        <span class="pill pill-active">Active</span>
+      {% else %}
+        <span class="pill pill-inactive">Inactive</span>
+      {% endif %}
+    </p>
+    {% if selected_client.notes %}<p><strong>Notes:</strong> {{ selected_client.notes }}</p>{% endif %}
+  </div>
+  <div class="scroll-card-foot">
+    <button type="button" class="btn btn-danger btn-sm"
+            hx-get="{% url 'clients:archive' selected_client.pk %}?confirm=1"
+            hx-target="#modal"
+            hx-swap="innerHTML">Archive Client</button>
+  </div>
+</section>
+
+<section class="card scroll-card pg-exercises" aria-label="Exercise library">
+  <div class="scroll-card-head">
+    <h3 style="margin:0;">Exercise Library</h3>
+    <button type="button" class="btn btn-secondary btn-sm"
+            hx-get="{% url 'exercises:create' %}"
+            hx-target="#modal"
+            hx-swap="innerHTML">+ Add</button>
+  </div>
+  <div class="scroll-card-body">
+    {% if exercises %}
+    <table>
+      <thead>
+        <tr><th scope="col">Exercise</th><th scope="col">Category</th><th scope="col">Default</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for ex in exercises %}
+          <tr>
+            <td>{{ ex.name }}</td>
+            <td>{{ ex.get_category_display }}</td>
+            <td>{{ ex.default_display }}</td>
+            <td style="text-align:right;">
+              {% if plan %}
+                <form method="post" action="{% url 'plans:exercise_add' plan.pk %}" style="display:inline;"
+                      hx-post="{% url 'plans:exercise_add' plan.pk %}"
+                      hx-target="#plan-builder"
+                      hx-swap="outerHTML">
+                  {% csrf_token %}
+                  <input type="hidden" name="exercise_id" value="{{ ex.pk }}">
+                  <button class="btn btn-secondary btn-sm" type="submit" aria-label="Add {{ ex.name }} to plan">+</button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="muted">No exercises yet.
+      <button type="button" class="text-accent"
+              style="background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;"
+              hx-get="{% url 'exercises:create' %}" hx-target="#modal" hx-swap="innerHTML">Create your first one</button>.
+    </p>
+    {% endif %}
+  </div>
+</section>
+
+{% if plan %}
+  {% include "plans/plan_builder.html" %}
+{% else %}
+  <section class="card scroll-card pg-plan" id="plan-builder" aria-label="Training plan builder">
+    <div class="scroll-card-head">
+      <h3 style="margin:0;">Training Plan</h3>
+    </div>
+    <div class="scroll-card-body" style="display:flex;align-items:center;justify-content:center;text-align:center;">
+      <div>
+        <p class="muted" style="margin:0 0 14px;">No active plan for {{ selected_client.full_name }} yet.</p>
+        <button class="btn btn-primary"
+                hx-get="{% url 'clients:panel' selected_client.pk %}?ensure_plan=1"
+                hx-target="#program-main"
+                hx-swap="innerHTML">Create plan</button>
+      </div>
+    </div>
+  </section>
+{% endif %}
+
+{% else %}
+
+<section class="card scroll-card pg-selected" aria-label="Selected client">
+  <div class="scroll-card-head"><h3 style="margin:0;">Selected Client</h3></div>
+  <div class="scroll-card-body" style="display:flex;align-items:center;justify-content:center;text-align:center;">
+    <p class="muted" style="margin:0;">Pick a client on the left, or add your first one.</p>
+  </div>
+</section>
+
+<section class="card scroll-card pg-exercises" aria-label="Exercise library">
+  <div class="scroll-card-head">
+    <h3 style="margin:0;">Exercise Library</h3>
+    <button type="button" class="btn btn-secondary btn-sm"
+            hx-get="{% url 'exercises:create' %}"
+            hx-target="#modal"
+            hx-swap="innerHTML">+ Add</button>
+  </div>
+  <div class="scroll-card-body">
+    {% if exercises %}
+    <table>
+      <thead><tr><th>Exercise</th><th>Category</th><th>Default</th></tr></thead>
+      <tbody>
+        {% for ex in exercises %}
+        <tr><td>{{ ex.name }}</td><td>{{ ex.get_category_display }}</td><td>{{ ex.default_display }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="muted">No exercises yet.</p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="card scroll-card pg-plan" id="plan-builder" aria-label="Training plan builder">
+  <div class="scroll-card-head"><h3 style="margin:0;">Training Plan</h3></div>
+  <div class="scroll-card-body" style="display:flex;align-items:center;justify-content:center;text-align:center;">
+    <p class="muted" style="margin:0;">Select a client to start building their plan.</p>
+  </div>
+</section>
+
+{% endif %}

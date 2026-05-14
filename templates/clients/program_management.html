@@ -1,0 +1,64 @@
+{% extends "base_app.html" %}
+
+{% block title %}Client Program Management : TrainForge{% endblock %}
+
+{% block main %}
+<div class="page-top">
+  <div>
+    <h1>Client Program Management</h1>
+    <p class="muted">Manage clients, exercise templates, and personalised plans.</p>
+  </div>
+  <div class="flex-row">
+    <button type="button" class="btn btn-primary"
+            hx-get="{% url 'clients:create' %}"
+            hx-target="#modal"
+            hx-swap="innerHTML">+ Add Client</button>
+  </div>
+</div>
+
+<div class="program-grid">
+  <aside class="card scroll-card pg-clients" aria-label="Clients">
+    <div class="scroll-card-head">
+      <h3 style="margin:0;">Clients</h3>
+    </div>
+    <form method="get" action="{% url 'clients:list' %}" role="search" class="scroll-card-tools">
+      <label for="client-search" class="visually-hidden">Search clients</label>
+      <input id="client-search" type="search" name="q" placeholder="Search client" value="{{ search_q }}">
+    </form>
+    <div class="scroll-card-body client-list">
+      {% for c in clients %}
+        <a href="{% url 'clients:detail' c.pk %}"
+           hx-get="{% url 'clients:panel' c.pk %}"
+           hx-target="#program-main"
+           hx-swap="innerHTML"
+           hx-push-url="{% url 'clients:detail' c.pk %}"
+           class="client-list-item {% if selected_client and selected_client.pk == c.pk %}active{% endif %}">
+          {{ c.full_name }}
+        </a>
+      {% empty %}
+        <p class="muted" style="margin:0;">No clients yet. Add one to get started.</p>
+      {% endfor %}
+    </div>
+  </aside>
+
+  <div id="program-main" class="pg-main-contents">
+    {% include "clients/program_main.html" %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+
+  document.addEventListener('click', function (e) {
+    var link = e.target.closest('.client-list-item');
+    if (!link) return;
+    var list = link.closest('.client-list');
+    if (!list) return;
+    list.querySelectorAll('.client-list-item.active').forEach(function (el) {
+      el.classList.remove('active');
+    });
+    link.classList.add('active');
+  });
+</script>
+{% endblock %}

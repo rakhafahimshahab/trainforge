@@ -1,0 +1,77 @@
+{% extends "base_app.html" %}
+
+{% block title %}{{ plan.title }} : TrainForge{% endblock %}
+
+{% block main %}
+<div class="page-top">
+  <div>
+    <h1>{{ plan.title }}</h1>
+    <p class="muted">{{ plan.client.full_name }}'s training plan</p>
+  </div>
+  <a href="{% url 'clients:detail' plan.client_id %}" class="btn btn-secondary">Back to client</a>
+</div>
+
+<div class="card mb-4">
+  <div class="flex-between" style="margin-bottom:18px;flex-wrap:wrap;gap:14px;">
+    <div class="flex-row" style="gap:24px;flex-wrap:wrap;">
+      <div>
+        <div class="muted" style="font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;">Status</div>
+        <div style="margin-top:6px;">
+          {% if plan.status == 'active' %}
+            <span class="pill pill-active">Active</span>
+          {% elif plan.status == 'completed' %}
+            <span class="pill pill-completed">Completed</span>
+          {% else %}
+            <span class="pill pill-draft">Draft</span>
+          {% endif %}
+        </div>
+      </div>
+      <div>
+        <div class="muted" style="font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;">Created</div>
+        <div style="margin-top:6px;font-weight:600;">{{ plan.created_at|date:"j M Y" }}</div>
+      </div>
+      <div>
+        <div class="muted" style="font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;">Exercises</div>
+        <div style="margin-top:6px;font-weight:600;">{{ plan_exercises|length }}</div>
+      </div>
+    </div>
+  </div>
+
+  {% if plan.goal_summary %}
+    <h3 style="margin:0 0 8px;">Goal</h3>
+    <p style="margin:0 0 22px;line-height:1.6;color:var(--text);">{{ plan.goal_summary|linebreaksbr }}</p>
+  {% endif %}
+
+  <h3 style="margin:0 0 12px;">Exercises</h3>
+  {% if plan_exercises %}
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col" style="width:48px;">#</th>
+            <th scope="col">Exercise</th>
+            <th scope="col">Category</th>
+            <th scope="col" style="width:80px;">Sets</th>
+            <th scope="col" style="width:80px;">Reps</th>
+            <th scope="col">Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for pe in plan_exercises %}
+            <tr>
+              <td class="muted">{{ forloop.counter }}</td>
+              <td><strong>{{ pe.exercise.name }}</strong></td>
+              <td class="muted">{{ pe.exercise.get_category_display }}</td>
+              <td>{{ pe.sets }}</td>
+              <td>{{ pe.reps }}</td>
+              <td class="muted">{{ pe.notes|default:"-" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="muted">No exercises added to this plan yet.</p>
+  {% endif %}
+</div>
+{% endblock %}
