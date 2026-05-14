@@ -23,6 +23,9 @@ DEBUG = env_bool("DEBUG", True)
 ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", "localhost,127.0.0.1") or ["*"]
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
 
+FORCE_SCRIPT_NAME = os.getenv("FORCE_SCRIPT_NAME") or None
+USE_X_FORWARDED_HOST = env_bool("USE_X_FORWARDED_HOST", False)
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -111,7 +114,8 @@ TIME_ZONE = "Australia/Brisbane"
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = "/static/"
+_static_prefix = (FORCE_SCRIPT_NAME or "").rstrip("/")
+STATIC_URL = f"{_static_prefix}/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATICFILES_STORAGE = (
