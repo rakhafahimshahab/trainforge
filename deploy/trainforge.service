@@ -5,7 +5,7 @@ After=network.target
 [Service]
 User=www-data
 Group=www-data
-WorkingDirectory=/var/www/djangoapps/trainforge/trainforge
+WorkingDirectory=/var/www/djangoapps/trainforge
 EnvironmentFile=/var/www/djangoapps/trainforge/trainforge/.env
 
 ExecStart=/var/www/djangoapps/trainforge/venv/bin/gunicorn \
