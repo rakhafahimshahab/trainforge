@@ -143,6 +143,7 @@ ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_SESSION_REMEMBER = True
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https" if not DEBUG else "http"
 SOCIALACCOUNT_LOGIN_ON_GET = True
+ACCOUNT_ADAPTER = "accounts.adapters.AccountAdapter"
 SOCIALACCOUNT_ADAPTER = "accounts.adapters.SocialAccountAdapter"
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
